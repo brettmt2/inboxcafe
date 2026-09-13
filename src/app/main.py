@@ -243,7 +243,15 @@ def get_inbox(creds=Depends(validate_auth)):
         msg = (
             gmail.users().messages().get(userId="me", id=message["id"]).execute()
         )
-        content.append(msg)
+        subject = ""
+        headers = msg.get('payload', {}).get('headers', [])
+        for header in headers:
+            if header.get('name', '') == 'Subject':
+                subject = header['value']
+
+        content.append(subject)
+
+    # TODO: pick last message in thread to display. nest rest of thread underneath  
 
     return {'content': content}
 
