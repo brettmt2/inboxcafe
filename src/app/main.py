@@ -228,4 +228,23 @@ def get_user_info(creds=Depends(validate_auth)):
 
     return {"name": name, "photo_url": photo_url}
 
+@app.get("/api/inbox")
+def get_inbox(creds=Depends(validate_auth)):
+    # returing top 5 for now
+    gmail = build("gmail", "v1", credentials=creds)
+    results = (gmail.users().messages().list(userId="me", labelIds=["INBOX"], q="category:primary", maxResults=5).execute())
+    messages = results.get("messages", [])
+    content = []
+
+    if not messages:
+        return {'content': "No messages found."}
+
+    for message in messages:
+        msg = (
+            gmail.users().messages().get(userId="me", id=message["id"]).execute()
+        )
+        content.append(msg)
+
+    return {'content': content}
+
 app.mount("/static", StaticFiles(directory="src/web"), name="static")
