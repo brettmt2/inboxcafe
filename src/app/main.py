@@ -1,73 +1,15 @@
-from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Cookie, Depends
-from fastapi.responses import RedirectResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
-
-
-from google_auth_oauthlib.flow import Flow
-from googleapiclient.discovery import build
-from google.auth.transport.requests import Request as GoogleRequest
-from google.auth.exceptions import RefreshError
-
-import sqlite3
-from google.oauth2.credentials import Credentials
-
-import json
 import secrets
-from typing import Optional
+import sqlite3
+from contextlib import asynccontextmanager
 
-def load_credentials(db, email: str) -> Credentials | None:
-    cursor = db.cursor()
-    cursor.execute(
-        "SELECT credentials_json FROM user_credentials WHERE user_email = ?",
-        (email,)
-    )
-    row = cursor.fetchone()
+from fastapi import Depends, FastAPI, Request
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from googleapiclient.discovery import build
 
-    if row is None:
-        return None
+from src.app.utils import RedirectException, build_flow, save_credentials, validate_auth
 
-    creds_json = row[0]
-    return Credentials.from_authorized_user_info(
-        info=json.loads(creds_json), scopes=SCOPES
-    )
-
-def get_email_from_session(db, session_id: str) -> str | None:
-    cursor = db.cursor()
-    cursor.execute(
-        "SELECT user_email FROM sessions WHERE session_id = ?",
-        (session_id,)
-    )
-    row = cursor.fetchone()
-
-    if row is None:
-        return None
-
-    return row[0]
-
-def save_credentials(db, email: str, creds: Credentials) -> None:
-    if not creds.refresh_token:
-        user_creds: Credentials = load_credentials(db=db, email=email)
-
-        if not user_creds:
-            return
-        
-        if user_creds.refresh_token:
-            creds_dict = json.loads(creds.to_json())
-            creds_dict['refresh_token'] = user_creds.refresh_token
-            creds = Credentials.from_authorized_user_info(info=creds_dict, scopes=SCOPES)
-        else:
-            return
-
-    cursor = db.cursor()
-    cursor.execute("""
-        INSERT INTO user_credentials (user_email, credentials_json, updated_at)
-        VALUES (?, ?, CURRENT_TIMESTAMP)
-        ON CONFLICT(user_email) DO UPDATE SET
-            credentials_json = excluded.credentials_json,
-            updated_at = CURRENT_TIMESTAMP
-    """, (email, creds.to_json()))
-    db.commit()
+flows = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -99,58 +41,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-SCOPES = [
-    "https://www.googleapis.com/auth/userinfo.email",
-    "https://www.googleapis.com/auth/userinfo.profile",
-    "https://www.googleapis.com/auth/gmail.readonly",
-    "openid"
-]
-
-flows = {}
-
-def build_flow():
-    flow = Flow.from_client_secrets_file('credentials.json', scopes=SCOPES)
-    flow.redirect_uri = 'http://localhost:8000/auth/callback'
-
-    return flow
-
-class RedirectException(Exception):
-    pass
-
 @app.exception_handler(RedirectException)
 def redirect_exception_handler(request: Request, exc: RedirectException):
     print("RedirectException caught, redirecting to /auth")
     return RedirectResponse(url="/auth")
-
-def validate_auth(request: Request, session_id: Optional[str] = Cookie(None)):
-    if not session_id:
-        print("no session_id cookie")
-        raise RedirectException()
-
-    db = request.app.state.db_conn
-
-    email = get_email_from_session(db=db, session_id=session_id)
-    if not email:
-        print("session_id present but no matching email")
-        raise RedirectException()
-
-    creds = load_credentials(db=db, email=email)
-
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            print("refreshing..")
-            try:
-                creds.refresh(GoogleRequest())
-            except RefreshError:
-                print("invalid refresh token... reauthenticate")
-                raise RedirectException()
-            
-            save_credentials(db=db, email=email, creds=creds)
-        else:
-            print("no valid creds and refresh not possible")
-            raise RedirectException()
-
-    return creds
 
 @app.get("/")
 def home(creds=Depends(validate_auth)):
@@ -255,7 +149,7 @@ def get_inbox(creds=Depends(validate_auth)):
 
         content.append(subject)
 
-    # TODO: pick last message in thread to display. nest rest of thread underneath  
+    # TODO: pick last message in thread to display. nest rest of thread underneath 
 
     return {'content': content}
 
