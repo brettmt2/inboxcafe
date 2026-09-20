@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request as GoogleRequest
+from google.auth.exceptions import RefreshError
 
 import sqlite3
 from google.oauth2.credentials import Credentials
@@ -138,7 +139,12 @@ def validate_auth(request: Request, session_id: Optional[str] = Cookie(None)):
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             print("refreshing..")
-            creds.refresh(GoogleRequest())
+            try:
+                creds.refresh(GoogleRequest())
+            except RefreshError:
+                print("invalid refresh token... reauthenticate")
+                raise RedirectException()
+            
             save_credentials(db=db, email=email, creds=creds)
         else:
             print("no valid creds and refresh not possible")
@@ -220,11 +226,9 @@ def get_user_info(creds=Depends(validate_auth)):
 
     if names:
         name = names[0].get("displayName", name)
-        print(name)
 
     if photos:
         photo_url = photos[0].get("url", photo_url)
-        print(photo_url)
 
     return {"name": name, "photo_url": photo_url}
 
