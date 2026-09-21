@@ -1,3 +1,4 @@
+import base64
 import json
 from typing import Optional
 
@@ -8,6 +9,10 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 
 from src.app.constants import SCOPES
+
+def decode(data):
+    return base64.urlsafe_b64decode(data).decode('utf-8')
+
 def load_credentials(db, email: str) -> Credentials | None:
     cursor = db.cursor()
     cursor.execute(

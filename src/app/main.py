@@ -1,13 +1,14 @@
 import secrets
 import sqlite3
 from contextlib import asynccontextmanager
+import json
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from googleapiclient.discovery import build
 
-from src.app.utils import RedirectException, build_flow, save_credentials, validate_auth
+from src.app.utils import RedirectException, build_flow, save_credentials, validate_auth, decode
 
 flows = {}
 
@@ -128,29 +129,19 @@ def get_user_info(creds=Depends(validate_auth)):
 
 @app.get("/api/inbox")
 def get_inbox(creds=Depends(validate_auth)):
-    # returing top 5 for now
+    # TODO: pick last message in thread to display. nest rest of thread underneath
     gmail = build("gmail", "v1", credentials=creds)
-    results = (gmail.users().messages().list(userId="me", labelIds=["INBOX"], q="category:primary", maxResults=5).execute())
-    messages = results.get("messages", [])
-    content = []
+    results = (gmail.users().threads().list(userId="me", labelIds=["INBOX"], q="category:primary").execute().get("threads", []))
+    payloads = []
 
-    if not messages:
-        return {'content': "No messages found."}
-
-    for message in messages:
-        msg = (
-            gmail.users().messages().get(userId="me", id=message["id"]).execute()
+    for thread in results:
+        tdata = (
+            gmail.users().threads().get(userId="me", id=thread["id"]).execute()
         )
-        subject = ""
-        headers = msg.get('payload', {}).get('headers', [])
-        for header in headers:
-            if header.get('name', '') == 'Subject':
-                subject = header['value']
 
-        content.append(subject)
+        msg = tdata["messages"][-1]["payload"]
+        payloads.append(msg)
 
-    # TODO: pick last message in thread to display. nest rest of thread underneath 
-
-    return {'content': content}
+    return {"content": payloads}
 
 app.mount("/static", StaticFiles(directory="src/web"), name="static")
