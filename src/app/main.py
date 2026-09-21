@@ -1,7 +1,6 @@
 import secrets
 import sqlite3
 from contextlib import asynccontextmanager
-import json
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import FileResponse, RedirectResponse
