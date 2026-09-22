@@ -136,17 +136,17 @@ def get_inbox(creds=Depends(validate_auth)):
 
     for thread in results:
         tdata = (
-            gmail.users().threads().get(userId="me", id=thread["id"], format='full').execute()
+            gmail.users().threads().get(userId="me", id=thread["id"]).execute()
         )
 
-        msg = tdata["messages"][-1]['payload']
+        msg = tdata["messages"][-1]
         m_ids.append(msg["id"])
 
     for m_id in m_ids:
         msg = (
             gmail.users().messages().get(userId="me", id=m_id, format="metadata").execute()
         )
-        payloads.append(msg)
+        payloads.append(msg) 
 
     return {"content": payloads}
 
