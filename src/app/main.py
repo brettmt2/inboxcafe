@@ -144,9 +144,14 @@ def get_inbox(creds=Depends(validate_auth)):
 
     for m_id in m_ids:
         msg = (
-            gmail.users().messages().get(userId="me", id=m_id, format="metadata").execute()
+            gmail.users().messages().get(userId="me", id=m_id, format="metadata", metadataHeaders=["Subject", "From", "Date"]).execute()
         )
-        payloads.append(msg) 
+        print(msg)
+        payloads.append({
+            'msg_id': m_id,
+            'preview': msg.get('snippet', ''),
+            'headers': msg.get('payload', {}).get('headers', [])
+        })
 
     return {"content": payloads}
 
