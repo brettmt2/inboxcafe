@@ -107,3 +107,17 @@ def validate_auth(request: Request, session_id: Optional[str] = Cookie(None)):
             raise RedirectException()
 
     return creds
+
+def parse_headers(headers: list[dict]):
+    headers_f = {}
+    for h in headers:
+        if h.get('name') == 'Date':
+            headers_f['Date'] = h.get('value', '')
+        elif h.get('name') == 'From':
+            headers_f['From'] = h.get('value', '')
+        elif h.get('name') == 'Subject':
+            headers_f['Subject'] = h.get('value', '')
+        else:
+            continue
+
+    return headers_f

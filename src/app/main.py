@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from googleapiclient.discovery import build
 
-from src.app.utils import RedirectException, build_flow, save_credentials, validate_auth, decode
+from src.app.utils import RedirectException, build_flow, save_credentials, validate_auth, parse_headers
 
 flows = {}
 
@@ -128,7 +128,6 @@ def get_user_info(creds=Depends(validate_auth)):
 
 @app.get("/api/inbox")
 def get_inbox(creds=Depends(validate_auth)):
-    # TODO: pick last message in thread to display. nest rest of thread underneath
     gmail = build("gmail", "v1", credentials=creds)
     results = (gmail.users().threads().list(userId="me", labelIds=["INBOX"], q="category:primary").execute().get("threads", []))
     payloads = []
@@ -146,7 +145,8 @@ def get_inbox(creds=Depends(validate_auth)):
         msg = (
             gmail.users().messages().get(userId="me", id=m_id, format="metadata", metadataHeaders=["Subject", "From", "Date"]).execute()
         )
-        print(msg)
+        headers = msg.get('payload', {}).get('headers', [])
+        print(parse_headers(headers))
         payloads.append({
             'msg_id': m_id,
             'preview': msg.get('snippet', ''),
