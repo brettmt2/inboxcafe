@@ -1,25 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
-    <title>InboxCafe</title>
-    <style>
-        #profile-photo {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 4px solid #ffb6c1;
-            box-shadow: 0 4px 12px rgba(255, 182, 193, 0.5);
-        }
-    </style>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <h1>Welcome to InboxCafe! ~</h1>
-
-    <img id="profile-photo" src="" alt="Profile photo" referrerpolicy="no-referrer">
-    <p id="profile-name"></p>
-
+    <div class="profile-container">
+        <img id="profile-photo" src="" alt="Profile photo" referrerpolicy="no-referrer">
+        <h1>Hi, <span id="greeting-name"></span></h1>
+    </div>
     <script src="/static/api.js"></script>
 </body>
 </html>

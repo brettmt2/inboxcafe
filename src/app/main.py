@@ -146,11 +146,11 @@ def get_inbox(creds=Depends(validate_auth)):
             gmail.users().messages().get(userId="me", id=m_id, format="metadata", metadataHeaders=["Subject", "From", "Date"]).execute()
         )
         headers = msg.get('payload', {}).get('headers', [])
-        print(parse_headers(headers))
+        headers = parse_headers(headers)
         payloads.append({
             'msg_id': m_id,
             'preview': msg.get('snippet', ''),
-            'headers': msg.get('payload', {}).get('headers', [])
+            'headers': headers
         })
 
     return {"content": payloads}

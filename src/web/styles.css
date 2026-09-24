@@ -1,0 +1,19 @@
+#profile-photo {
+    width: 230px;
+    height: 230px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #ffb6c1;
+    box-shadow: 0 4px 12px rgba(255, 182, 193, 0.5);
+}
+
+body {
+    font-family: "Google Sans", sans-serif;
+}
+
+.profile-container {
+    display: inline-flex;
+    flex-direction: column; /* Stack the image and text vertically */
+    align-items: center;    /* Center them horizontally inside the div */
+    text-align: center;     /* Ensure the text itself is centered */
+}

@@ -13,12 +13,14 @@ async function getProfileInfo() {
         const profileImg = document.getElementById("profile-photo");
         profileImg.src = photoURL;
 
-        const nameTitle = document.getElementById("profile-name");
-        nameTitle.textContent = name;
+        document.getElementById("greeting-name").textContent = name
     }
     catch (error) {
         console.log(error.message);
     }
 }
 
+async function getInbox() {
+
+}
 getProfileInfo();
