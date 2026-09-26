@@ -11,9 +11,23 @@ body {
     font-family: "Google Sans", sans-serif;
 }
 
+.page-layout {
+    display: flex;
+    align-items: flex-start;
+}
+
 .profile-container {
-    display: inline-flex;
-    flex-direction: column; /* Stack the image and text vertically */
-    align-items: center;    /* Center them horizontally inside the div */
-    text-align: center;     /* Ensure the text itself is centered */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.inbox-container {
+    flex: 3;
+    align-items: center;
+}
+
+.inbox-container h2 {
+    text-align: center;
 }
